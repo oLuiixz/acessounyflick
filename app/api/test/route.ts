@@ -57,7 +57,7 @@ export async function POST(req:NextRequest){
       else if(apiJson && Array.isArray(apiJson.data) && typeof apiJson.data[0]?.message==="string") message=apiJson.data[0].message;
       else if(apiJson && typeof apiJson.message==="string") message=apiJson.message;
       else if(apiJson && typeof apiJson.text==="string") message=apiJson.text;
-      message=String(message).replace(/\\\//g,"/").replace(/TESTE COMPLETO 2HR/gi,"ACESSO BONUS");
+      message=String(message).replace(/\\\//g,"/").replace(/TESTE COMPLETO 2HR/gi,"ACESSO BONUS").replace(/^.*🎈\s*Site para ativação:\s*https?:\/\/max\.comboflix\.com\.br\/xstart\s*$/gim,"").replace(/\n{3,}/g,"\n\n").trim();
     }catch{
       message=raw;
     }
