@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from "next/server";
 import {randomUUID} from "crypto";
 import {Lead} from "@/lib/types";
+import {hashIdentifier} from "@/lib/test-security";
 
 const memory:Lead[]=[];
 function dbEnabled(){return Boolean(process.env.DATABASE_URL)};
@@ -16,7 +17,8 @@ export async function POST(req:NextRequest){
      const lead=memory.find(x=>x.whatsapp===whatsapp&&x.testGenerated);
      return NextResponse.json({allowed:!lead});
    }
-   const r=await query("select count(*)::int as count,max(completed_at) as last_generated from test_attempts where whatsapp_hash=encode(digest('whatsapp:'||$1,'sha256'),'hex') and status='generated'",[whatsapp]);
+   const whatsappHash=hashIdentifier("whatsapp:"+whatsapp);
+   const r=await query("select count(*)::int as count,max(completed_at) as last_generated from test_attempts where whatsapp_hash=$1 and status='generated'",[whatsappHash]);
    const count=Number(r.rows[0]?.count||0);
    const last=r.rows[0]?.last_generated?new Date(r.rows[0].last_generated):null;
    const nextAllowedAt=last?new Date(last.getTime()+4*60*60*1000):null;
