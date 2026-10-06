@@ -1,9 +1,9 @@
 import {NextRequest,NextResponse} from "next/server";
 
-function pick(obj:Record<string,unknown>, keys:string[]){
-  for(const key of keys){
-    const value=obj?.[key];
-    if(typeof value==="string" && value.trim()) return value.trim();
+function firstMatch(text:string,patterns:RegExp[]){
+  for(const pattern of patterns){
+    const match=text.match(pattern);
+    if(match?.[1]) return match[1].trim();
   }
   return "";
 }
@@ -23,41 +23,32 @@ export async function POST(req:NextRequest){
 
     const upstream=await fetch(apiUrl,{
       method:"POST",
-      headers:{"content-type":"application/json","accept":"application/json"},
-      body:JSON.stringify({
-        name,
-        nome:name,
-        surname,
-        sobrenome:surname,
-        email,
-        whatsapp,
-        phone:whatsapp,
-        telefone:whatsapp
-      }),
+      headers:{"content-type":"application/json","accept":"text/plain, application/json"},
+      body:JSON.stringify({name,nome:name,surname,sobrenome:surname,email,whatsapp,phone:whatsapp,telefone:whatsapp}),
       cache:"no-store"
     });
 
     const raw=await upstream.text();
-    let data:Record<string,unknown>={};
-    try{data=JSON.parse(raw)}catch{}
-
     if(!upstream.ok){
       return NextResponse.json({error:"O servidor não conseguiu gerar o teste.",upstreamStatus:upstream.status},{status:502});
     }
 
-    const playlist=pick(data,["playlist","playlist_url","playlistUrl","m3u","m3u_url","m3uUrl","url","link"]);
-    const username=pick(data,["username","user","usuario","login"]);
-    const password=pick(data,["password","pass","senha"]);
-    const expiresAt=pick(data,["expiresAt","expires_at","expiration","valid_until"]);
+    let message=raw;
+    try{
+      const json=JSON.parse(raw);
+      if(typeof json==="string") message=json;
+      else if(json && typeof json.message==="string") message=json.message;
+      else if(json && typeof json.text==="string") message=json.text;
+      else if(json && typeof json.data?.message==="string") message=json.data.message;
+    }catch{}
 
-    return NextResponse.json({
-      success:true,
-      playlist,
-      username,
-      password,
-      expiresAt,
-      raw:data
-    });
+    const username=firstMatch(message,[/🌐?\s*USUÁRIO:\s*([\w.-]+)/i,/👤\s*USUÁRIO:\s*([\w.-]+)/i]);
+    const password=firstMatch(message,[/🔑\s*SENHA:\s*([\w.-]+)/i]);
+    const playlist=firstMatch(message,[/M3U\s*\(MPEG-TS\):\s*(https?:\/\/\S+)/i,/🔑\s*(https?:\/\/\S*get\.php\?username=\S+)/i]);
+    const hls=firstMatch(message,[/HLS\s*PRINCIPAL:\s*(https?:\/\/\S+)/i]);
+    const expiresAt=firstMatch(message,[/📅\s*VENCIMENTO:\s*(.+)/i]);
+
+    return NextResponse.json({success:true,message,username,password,playlist,hls,expiresAt});
   }catch{
     return NextResponse.json({error:"Falha ao conectar ao servidor de testes."},{status:502});
   }
