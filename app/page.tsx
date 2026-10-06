@@ -44,7 +44,13 @@ export default function Home(){
    buildFingerprint().then(setFingerprint).catch(()=>{});
    fetch("/api/chat-start",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({sessionId,deviceId:device,utm_source:p.get("utm_source")||"",utm_medium:p.get("utm_medium")||"",utm_content:p.get("utm_content")||""})}).catch(()=>{});
  },[]);
- useEffect(()=>{\n   if(!deviceId)return;\n   const sendHeartbeat=()=>{const sessionId=sessionStorage.getItem("unyflick_chat_session");if(!sessionId)return;fetch("/api/chat-heartbeat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({sessionId,deviceId})}).catch(()=>{})};\n   sendHeartbeat();\n   const interval=window.setInterval(sendHeartbeat,60000);\n   return ()=>window.clearInterval(interval);\n },[deviceId]); useEffect(()=>{const saved=localStorage.getItem("unyflick_lead_id");if(saved)setLeadId(saved)},[]);
+ useEffect(()=>{
+   if(!deviceId)return;
+   const sendHeartbeat=()=>{const sessionId=sessionStorage.getItem("unyflick_chat_session");if(!sessionId)return;fetch("/api/chat-heartbeat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({sessionId,deviceId})}).catch(()=>{})};
+   sendHeartbeat();
+   const interval=window.setInterval(sendHeartbeat,60000);
+   return ()=>window.clearInterval(interval);
+ },[deviceId]); useEffect(()=>{const saved=localStorage.getItem("unyflick_lead_id");if(saved)setLeadId(saved)},[]);
  const save=async(p:Partial<LeadData>&Record<string,unknown>={})=>{const id=leadId||crypto.randomUUID();if(!leadId){setLeadId(id);localStorage.setItem("unyflick_lead_id",id)}const payload={...data,...p,id};await fetch("/api/leads",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)}).catch(()=>{})};
  const bot=(text:string,next?:()=>void)=>{setTyping(true);setTimeout(()=>{setMsgs(m=>[...m,{from:"bot",text}]);setTyping(false);next?.()},900)};
  const answer=(text:string,nextStep:Step,reply=text)=>{setMsgs(m=>[...m,{from:"user",text:reply}]);setInput("");setError("");setStep(nextStep)};
