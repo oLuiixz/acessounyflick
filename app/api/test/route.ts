@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
-import {finishTest,reserveTest} from "@/lib/test-security";
+import {finishTest,getClientIp,reserveTest} from "@/lib/test-security";
 
 function firstMatch(text:string,patterns:RegExp[]){
   for(const pattern of patterns){
@@ -21,14 +21,15 @@ export async function POST(req:NextRequest){
     const email=String(body.email||"").trim();
     const whatsapp=String(body.whatsapp||"").replace(/\D/g,"");
     const deviceId=String(body.deviceId||"").trim();
+    const fingerprint=String(body.fingerprint||"").trim();
 
     if(!name||!whatsapp) return NextResponse.json({error:"Nome e WhatsApp são obrigatórios."},{status:400});
     if(!deviceId) return NextResponse.json({error:"Identificador do aparelho não encontrado. Recarregue a página e tente novamente."},{status:400});
+    if(!fingerprint) return NextResponse.json({error:"Não foi possível validar este dispositivo. Recarregue a página e tente novamente."},{status:400});
 
-    const forwarded=req.headers.get("x-forwarded-for");
-    const ip=forwarded?forwarded.split(",")[0].trim():(req.headers.get("x-real-ip")||"unknown");
+    const ip=getClientIp(req);
     const userAgent=req.headers.get("user-agent")||"";
-    const reservation=await reserveTest({whatsapp,deviceId,ip,userAgent,leadId:String(body.leadId||"")||undefined});
+    const reservation=await reserveTest({whatsapp,deviceId,fingerprint,ip,userAgent,leadId:String(body.leadId||"")||undefined});
     if(!reservation.allowed){
       return NextResponse.json({error:reservation.message,blocked:true,reason:reservation.reason},{status:429});
     }
