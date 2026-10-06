@@ -23,7 +23,7 @@ export async function POST(req:NextRequest){
 
     const upstream=await fetch(apiUrl,{
       method:"POST",
-      headers:{"content-type":"application/json","accept":"text/plain, application/json"},
+      headers:{"content-type":"application/json","accept":"application/json, text/plain"},
       body:JSON.stringify({name,nome:name,surname,sobrenome:surname,email,whatsapp,phone:whatsapp,telefone:whatsapp}),
       cache:"no-store"
     });
@@ -36,11 +36,25 @@ export async function POST(req:NextRequest){
     let message=raw;
     try{
       const json=JSON.parse(raw);
-      if(typeof json==="string") message=json;
-      else if(json && typeof json.message==="string") message=json.message;
-      else if(json && typeof json.text==="string") message=json.text;
-      else if(json && typeof json.data?.message==="string") message=json.data.message;
-    }catch{}
+
+      if(typeof json==="string"){
+        message=json;
+      }else if(json && typeof json.reply==="string"){
+        message=json.reply;
+      }else if(json && Array.isArray(json.data) && typeof json.data[0]?.message==="string"){
+        message=json.data[0].message;
+      }else if(json && typeof json.message==="string"){
+        message=json.message;
+      }else if(json && typeof json.text==="string"){
+        message=json.text;
+      }
+
+      // A resposta já vem com \n e URLs escapadas no JSON.
+      // JSON.parse acima normaliza esses escapes para o texto original.
+      message=String(message).replace(/\\\//g,"/");
+    }catch{
+      message=raw;
+    }
 
     const username=firstMatch(message,[/🌐?\s*USUÁRIO:\s*([\w.-]+)/i,/👤\s*USUÁRIO:\s*([\w.-]+)/i]);
     const password=firstMatch(message,[/🔑\s*SENHA:\s*([\w.-]+)/i]);
