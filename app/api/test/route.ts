@@ -1,4 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
+import {finishTest,reserveTest} from "@/lib/test-security";
 
 function firstMatch(text:string,patterns:RegExp[]){
   for(const pattern of patterns){
@@ -9,6 +10,7 @@ function firstMatch(text:string,patterns:RegExp[]){
 }
 
 export async function POST(req:NextRequest){
+  let attemptId="";
   try{
     const apiUrl=process.env.TEST_API_URL;
     if(!apiUrl) return NextResponse.json({error:"API de teste não configurada."},{status:503});
@@ -18,8 +20,19 @@ export async function POST(req:NextRequest){
     const surname=String(body.surname||"").trim();
     const email=String(body.email||"").trim();
     const whatsapp=String(body.whatsapp||"").replace(/\D/g,"");
+    const deviceId=String(body.deviceId||"").trim();
 
     if(!name||!whatsapp) return NextResponse.json({error:"Nome e WhatsApp são obrigatórios."},{status:400});
+    if(!deviceId) return NextResponse.json({error:"Identificador do aparelho não encontrado. Recarregue a página e tente novamente."},{status:400});
+
+    const forwarded=req.headers.get("x-forwarded-for");
+    const ip=forwarded?forwarded.split(",")[0].trim():(req.headers.get("x-real-ip")||"unknown");
+    const userAgent=req.headers.get("user-agent")||"";
+    const reservation=await reserveTest({whatsapp,deviceId,ip,userAgent,leadId:String(body.leadId||"")||undefined});
+    if(!reservation.allowed){
+      return NextResponse.json({error:reservation.message,blocked:true,reason:reservation.reason},{status:429});
+    }
+    attemptId=reservation.attemptId;
 
     const upstream=await fetch(apiUrl,{
       method:"POST",
@@ -30,27 +43,19 @@ export async function POST(req:NextRequest){
 
     const raw=await upstream.text();
     if(!upstream.ok){
+      await finishTest(attemptId,false);
       return NextResponse.json({error:"O servidor não conseguiu gerar o teste.",upstreamStatus:upstream.status},{status:502});
     }
 
     let message=raw;
+    let apiJson:any=null;
     try{
-      const json=JSON.parse(raw);
-
-      if(typeof json==="string"){
-        message=json;
-      }else if(json && typeof json.reply==="string"){
-        message=json.reply;
-      }else if(json && Array.isArray(json.data) && typeof json.data[0]?.message==="string"){
-        message=json.data[0].message;
-      }else if(json && typeof json.message==="string"){
-        message=json.message;
-      }else if(json && typeof json.text==="string"){
-        message=json.text;
-      }
-
-      // A resposta já vem com \n e URLs escapadas no JSON.
-      // JSON.parse acima normaliza esses escapes para o texto original.
+      apiJson=JSON.parse(raw);
+      if(typeof apiJson==="string") message=apiJson;
+      else if(apiJson && typeof apiJson.reply==="string") message=apiJson.reply;
+      else if(apiJson && Array.isArray(apiJson.data) && typeof apiJson.data[0]?.message==="string") message=apiJson.data[0].message;
+      else if(apiJson && typeof apiJson.message==="string") message=apiJson.message;
+      else if(apiJson && typeof apiJson.text==="string") message=apiJson.text;
       message=String(message).replace(/\\\//g,"/").replace(/TESTE COMPLETO 2HR/gi,"ACESSO BONUS");
     }catch{
       message=raw;
@@ -61,15 +66,15 @@ export async function POST(req:NextRequest){
     const playlist=firstMatch(message,[/M3U\s*\(MPEG-TS\):\s*(https?:\/\/\S+)/i,/🔑\s*(https?:\/\/\S*get\.php\?username=\S+)/i]);
     const hls=firstMatch(message,[/HLS\s*PRINCIPAL:\s*(https?:\/\/\S+)/i]);
     const expiresAt=firstMatch(message,[/📅\s*VENCIMENTO:\s*(.+)/i]);
-    let apiJson:any=null;
-    try{apiJson=JSON.parse(raw)}catch{}
     const payUrl=typeof apiJson?.payUrl==="string"?apiJson.payUrl:"";
-    const iboCode=firstMatch(message,[/\ud83c\udf88\s*C[óo]digo:\s*(\d+)/i]);
-    const xstartProCode=firstMatch(message,[/XSTART PRO[\\s\\S]*?C[óo]digo:\s*(\d+)/i]);
-    const xstartMaxDownloader=firstMatch(message,[/XSTART MAX[\\s\\S]*?C[óo]d downloader:\s*(\d+)/i]);
+    const iboCode=firstMatch(message,[/🎈\s*C[óo]digo:\s*(\d+)/i]);
+    const xstartProCode=firstMatch(message,[/XSTART PRO[\s\S]*?C[óo]digo:\s*(\d+)/i]);
 
-    return NextResponse.json({success:true,message,username,password,playlist,hls,expiresAt,payUrl,iboCode,xstartProCode,xstartMaxDownloader});
-  }catch{
+    await finishTest(attemptId,true,username);
+
+    return NextResponse.json({success:true,message,username,password,playlist,hls,expiresAt,payUrl,iboCode,xstartProCode});
+  }catch(error){
+    if(attemptId) await finishTest(attemptId,false).catch(()=>{});
     return NextResponse.json({error:"Falha ao conectar ao servidor de testes."},{status:502});
   }
 }
