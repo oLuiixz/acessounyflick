@@ -12,7 +12,7 @@ export default function Home(){
  const [step,setStep]=useState<Step>("welcome");
  const [msgs,setMsgs]=useState<Msg[]>([{from:"bot",text:"Oi! 👋 Eu sou o assistente da UnyFlick."},{from:"bot",text:"Quer assistir filmes, séries e canais ao vivo agora, de graça?"}]);
  const [input,setInput]=useState("");const [typing,setTyping]=useState(false);const [data,setData]=useState(initial);const [leadId,setLeadId]=useState("");const [error,setError]=useState("");
- const [test,setTest]=useState<{username:string;password:string;expiresAt:string;mock:boolean}|null>(null);
+ const [test,setTest]=useState<{username:string;password:string;expiresAt:string;mock:boolean;playlist?:string}|null>(null);
 
  useEffect(()=>{const p=new URLSearchParams(window.location.search);setData(d=>({...d,utm_source:p.get("utm_source")||"",utm_medium:p.get("utm_medium")||"",utm_content:p.get("utm_content")||""}))},[]);
  useEffect(()=>{const saved=localStorage.getItem("unyflick_lead_id");if(saved)setLeadId(saved)},[]);
@@ -37,8 +37,14 @@ export default function Home(){
 
  const generate=async()=>{
   setMsgs(m=>[...m,{from:"user",text:"Sim, está correto!"}]);setStep("test");setTyping(true);
-  try{const r=await fetch("/api/sigma",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name:data.name,surname:data.surname,whatsapp:data.whatsapp})});const t=await r.json();if(!r.ok)throw new Error();setTest(t);await save({stage:"install",testGenerated:true,testUsername:t.username,testPassword:t.password});setTyping(false);bot(`Seu teste está pronto!\n\n👤 Usuário: ${t.username}\n🔑 Senha: ${t.password}`,()=>setStep("install"))}
-  catch{setTyping(false);setError("Não foi possível gerar agora. Tente novamente.");setStep("confirm")}
+  try{
+   const r=await fetch("/api/test",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(data)});
+   const t=await r.json();if(!r.ok||!t.success)throw new Error();
+   setTest({username:t.username||"",password:t.password||"",expiresAt:t.expiresAt||"",mock:false,playlist:t.playlist||""});
+   await save({stage:"install",testGenerated:true,testUsername:t.username,testPassword:t.password,testPlaylist:t.playlist});
+   setTyping(false);
+   bot(t.playlist?"Seu teste está pronto!\n\n📺 Playlist: "+t.playlist:"Seu teste está pronto!\n\n👤 Usuário: "+(t.username||"gerado")+"\n🔑 Senha: "+(t.password||"gerada"),()=>setStep("install"))
+  }catch{setTyping(false);setError("Não foi possível gerar agora. Tente novamente.");setStep("confirm")}
  };
 
  const install=(where:string)=>{setMsgs(m=>[...m,{from:"user",text:where}]);setStep("offer");bot(where==="Instalar no celular"?"Perfeito. Vou te passar o passo a passo para instalar no celular.":"Perfeito. Vou te passar o passo a passo para instalar na TV.",()=>bot("E se quiser continuar depois do teste, temos planos a partir de R$ 29,90/mês, em até 12x + 50 canais de esporte bônus."))};
