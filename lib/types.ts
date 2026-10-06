@@ -1,0 +1,2 @@
+export type LeadStage="welcome"|"name"|"surname"|"email"|"whatsapp"|"confirm"|"test"|"install"|"offer"|"completed";
+export type Lead={id:string;name:string;surname:string;email:string;whatsapp:string;stage:LeadStage;utm_source:string;utm_medium:string;utm_content:string;testGenerated:boolean;testUsername?:string;testPassword?:string;createdAt:string;updatedAt:string};
