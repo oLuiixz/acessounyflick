@@ -10,6 +10,7 @@ async function query(sql:string,params:any[]=[]){
 }
 
 async function ensureTable(){
+  await query("select pg_advisory_xact_lock(hashtext('unyflick_chat_sessions_schema'))");
   await query(`create table if not exists chat_sessions (
     id uuid primary key default gen_random_uuid(),
     session_id text not null unique,
