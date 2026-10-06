@@ -27,11 +27,11 @@ async function ensureChatTable(){
 
 export async function GET(){
   if(!(await isAdminAuthenticated())) return NextResponse.json({error:"Não autorizado."},{status:401});
-  if(!process.env.DATABASE_URL) return NextResponse.json({stats:{chats:0,leads:0,tests:0,chat24h:0,test24h:0,testClicks24h:0,howClicks24h:0,conversion:0},recent:[],events:[]});
+  if(!process.env.DATABASE_URL) return NextResponse.json({stats:{chats:0,leads:0,tests:0,chat24h:0,test24h:0,testClicks24h:0,howClicks24h:0,active5m:0,conversion:0},recent:[],events:[]});
 
   await ensureChatTable();
   await query(`create table if not exists funnel_events (id uuid primary key default gen_random_uuid(),event text not null,session_id text,utm_source text not null default '',utm_medium text not null default '',utm_content text not null default '',created_at timestamptz not null default now())`);
-  const [stats,leads,tests,chats24h,tests24h,testClicks,howClicks,recent,events] = await Promise.all([
+  const [stats,leads,tests,chats24h,tests24h,testClicks,howClicks,active5m,recent,events] = await Promise.all([
     query("select count(*)::int as count from chat_sessions"),
     query("select count(*)::int as count from leads"),
     query("select count(*)::int as count from test_attempts where status='generated'"),
@@ -39,6 +39,7 @@ export async function GET(){
     query("select count(*)::int as count from test_attempts where status='generated' and completed_at>=now()-interval '24 hours'"),
     query("select count(*)::int as count from funnel_events where event='test' and created_at>=now()-interval '24 hours'"),
     query("select count(*)::int as count from funnel_events where event='how' and created_at>=now()-interval '24 hours'"),
+    query("select count(*)::int as count from chat_sessions where updated_at>=now()-interval '5 minutes'"),
     query(`select c.session_id,c.stage,c.utm_source,c.utm_medium,c.utm_content,c.created_at,c.updated_at,c.lead_id,
       l.name,l.surname,l.email,l.whatsapp,l.test_generated
       from chat_sessions c
@@ -58,6 +59,7 @@ export async function GET(){
       test24h:Number(tests24h.rows[0]?.count||0),
       testClicks24h:Number(testClicks.rows[0]?.count||0),
       howClicks24h:Number(howClicks.rows[0]?.count||0),
+      active5m:Number(active5m.rows[0]?.count||0),
       conversion:chatCount?Math.round((testCount/chatCount)*100):0
     },
     recent:recent.rows,
