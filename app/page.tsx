@@ -5,7 +5,7 @@ import {useEffect,useMemo,useState} from "react";
 type Msg={from:"bot"|"user";text:string};
 type Step="welcome"|"help"|"name"|"surname"|"email"|"whatsapp"|"confirm"|"test"|"install"|"feedback"|"offer";
 type InstallChoice="Smart TV"|"Celular / Tablet"|"Computador"|"Fire Stick / TV Box / Android TV";
-type LeadData={name:string;surname:string;email:string;whatsapp:string;utm_source:string;utm_medium:string;utm_content:string};
+type LeadData={name:string;surname:string;email:string;whatsapp:string;utm_source:string;utm_medium:string;utm_content:string;chatSessionId:string};
 async function buildFingerprint(){
  const canvas=document.createElement("canvas");
  canvas.width=280;canvas.height=60;
@@ -24,7 +24,7 @@ async function buildFingerprint(){
 }
 
 const progress:Record<Step,number>={welcome:1,help:1,name:1,surname:2,email:3,whatsapp:4,confirm:5,test:5,install:5,feedback:5,offer:5};
-const initial:LeadData={name:"",surname:"",email:"",whatsapp:"",utm_source:"",utm_medium:"",utm_content:""};
+const initial:LeadData={name:"",surname:"",email:"",whatsapp:"",utm_source:"",utm_medium:"",utm_content:"",chatSessionId:""};
 
 export default function Home(){
  const [step,setStep]=useState<Step>("welcome");
@@ -33,7 +33,18 @@ export default function Home(){
  const [test,setTest]=useState<{username:string;password:string;expiresAt:string;mock:boolean;playlist?:string;hls?:string;message?:string;payUrl?:string;iboCode?:string;xstartProCode?:string}|null>(null);
 
  useEffect(()=>{const p=new URLSearchParams(window.location.search);setData(d=>({...d,utm_source:p.get("utm_source")||"",utm_medium:p.get("utm_medium")||"",utm_content:p.get("utm_content")||""}))},[]);
- useEffect(()=>{const saved=localStorage.getItem("unyflick_lead_id");if(saved)setLeadId(saved);let device=localStorage.getItem("unyflick_device_id");if(!device){device=crypto.randomUUID();localStorage.setItem("unyflick_device_id",device)}setDeviceId(device);buildFingerprint().then(setFingerprint).catch(()=>{})},[]);
+ useEffect(()=>{
+   let sessionId=sessionStorage.getItem("unyflick_chat_session");
+   if(!sessionId){sessionId=crypto.randomUUID();sessionStorage.setItem("unyflick_chat_session",sessionId)}
+   const p=new URLSearchParams(window.location.search);
+   setData(d=>({...d,chatSessionId:sessionId!}));
+   let device=localStorage.getItem("unyflick_device_id");
+   if(!device){device=crypto.randomUUID();localStorage.setItem("unyflick_device_id",device)}
+   setDeviceId(device);
+   buildFingerprint().then(setFingerprint).catch(()=>{});
+   fetch("/api/chat-start",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({sessionId,deviceId:device,utm_source:p.get("utm_source")||"",utm_medium:p.get("utm_medium")||"",utm_content:p.get("utm_content")||""})}).catch(()=>{});
+ },[]);
+ useEffect(()=>{const saved=localStorage.getItem("unyflick_lead_id");if(saved)setLeadId(saved)},[]);
  const save=async(p:Partial<LeadData>&Record<string,unknown>={})=>{const id=leadId||crypto.randomUUID();if(!leadId){setLeadId(id);localStorage.setItem("unyflick_lead_id",id)}const payload={...data,...p,id};await fetch("/api/leads",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)}).catch(()=>{})};
  const bot=(text:string,next?:()=>void)=>{setTyping(true);setTimeout(()=>{setMsgs(m=>[...m,{from:"bot",text}]);setTyping(false);next?.()},900)};
  const answer=(text:string,nextStep:Step,reply=text)=>{setMsgs(m=>[...m,{from:"user",text:reply}]);setInput("");setError("");setStep(nextStep)};
@@ -57,7 +68,7 @@ export default function Home(){
   if(!fingerprint){const fp=await buildFingerprint().catch(()=>"");if(fp)setFingerprint(fp);}
   setMsgs(m=>[...m,{from:"user",text:"Sim, está correto!"}]);setStep("test");setTyping(true);
   try{
-   const r=await fetch("/api/test",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...data,leadId,deviceId,fingerprint:fingerprint||await buildFingerprint().catch(()=>"")})});
+   const r=await fetch("/api/test",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...data,leadId,deviceId,fingerprint:fingerprint||await buildFingerprint().catch(()=>"" )})});
    const t=await r.json();if(!r.ok||!t.success)throw new Error(t.error||"Não foi possível gerar o teste.");
    setTest({username:t.username||"",password:t.password||"",expiresAt:t.expiresAt||"",mock:false,playlist:t.playlist||"",hls:t.hls||"",message:t.message||"",payUrl:t.payUrl||"",iboCode:t.iboCode||"",xstartProCode:t.xstartProCode||""});
    await save({stage:"install",testGenerated:true,testUsername:t.username,testPassword:t.password,testPlaylist:t.playlist});
@@ -236,7 +247,7 @@ ${m3u}
 ❌ Não acha o app na loja → reinicie a TV e atualize o sistema
 ❌ Código não funciona → digite só os números, sem espaço
 ❌ Lista não carrega → troque o DNS para http://newx2.top
-❌ Canais travando → reinicie a TV e o roteador
+❌ Canais travando → reinicie o app e o roteador
 ❌ Usuário inválido → digite à mão, sem espaço no fim
 ❌ Teste expirou → renove: ${renew}
 
