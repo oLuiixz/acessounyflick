@@ -10,7 +10,7 @@ const initial:LeadData={name:"",surname:"",email:"",whatsapp:"",utm_source:"",ut
 
 export default function Home(){
  const [step,setStep]=useState<Step>("welcome");
- const [msgs,setMsgs]=useState<Msg[]>([{from:"bot",text:"Oi! 👋 Eu sou o assistente da UnyFlick."},{from:"bot",text:"Quer assistir filmes, séries e canais ao vivo agora, de graça por 2h?"}]);
+ const [msgs,setMsgs]=useState<Msg[]>([{from:"bot",text:"Oi! 👋 Eu sou o assistente da UnyFlick."},{from:"bot",text:"Quer assistir filmes, séries e canais ao vivo agora, de graça?"}]);
  const [input,setInput]=useState("");const [typing,setTyping]=useState(false);const [data,setData]=useState(initial);const [leadId,setLeadId]=useState("");const [error,setError]=useState("");
  const [test,setTest]=useState<{username:string;password:string;expiresAt:string;mock:boolean}|null>(null);
 
@@ -20,7 +20,7 @@ export default function Home(){
  const bot=(text:string,next?:()=>void)=>{setTyping(true);setTimeout(()=>{setMsgs(m=>[...m,{from:"bot",text}]);setTyping(false);next?.()},900)};
  const answer=(text:string,nextStep:Step,reply=text)=>{setMsgs(m=>[...m,{from:"user",text:reply}]);setInput("");setError("");setStep(nextStep)};
  const start=()=>{answer("Quero testar","name");bot("Perfeito. Qual é o seu nome?")};
- const how=()=>{answer("Como funciona?","help");bot("É simples: você recebe um acesso de teste por 2 horas para assistir ao catálogo no celular ou na TV. Sem compromisso. 😉")};
+ const how=()=>{answer("Como funciona?","help");bot("É simples: você recebe um acesso de teste para assistir ao catálogo no celular ou na TV. Sem compromisso. 😉")};
  const validate=(s:string)=>{if(step==="name"||step==="surname")return s.trim().length>=2;if(step==="email")return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());if(step==="whatsapp")return /^\d{10,11}$/.test(s.replace(/\D/g,""));return true};
 
  const submit=async()=>{
@@ -36,8 +36,8 @@ export default function Home(){
  };
 
  const generate=async()=>{
-  setMsgs(m=>[...m,{from:"user",text:"Está certo, gerar meu teste"}]);setStep("test");setTyping(true);
-  try{const r=await fetch("/api/sigma",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name:data.name,surname:data.surname,whatsapp:data.whatsapp})});const t=await r.json();if(!r.ok)throw new Error();setTest(t);await save({stage:"install",testGenerated:true,testUsername:t.username,testPassword:t.password});setTyping(false);bot(`Seu teste de 2 horas está pronto!\n\n👤 Usuário: ${t.username}\n🔑 Senha: ${t.password}`,()=>setStep("install"))}
+  setMsgs(m=>[...m,{from:"user",text:"Sim, está correto!"}]);setStep("test");setTyping(true);
+  try{const r=await fetch("/api/sigma",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name:data.name,surname:data.surname,whatsapp:data.whatsapp})});const t=await r.json();if(!r.ok)throw new Error();setTest(t);await save({stage:"install",testGenerated:true,testUsername:t.username,testPassword:t.password});setTyping(false);bot(`Seu teste está pronto!\n\n👤 Usuário: ${t.username}\n🔑 Senha: ${t.password}`,()=>setStep("install"))}
   catch{setTyping(false);setError("Não foi possível gerar agora. Tente novamente.");setStep("confirm")}
  };
 
@@ -46,12 +46,12 @@ export default function Home(){
   if(label==="Quero testar")start();
   else if(label==="Como funciona?")how();
   else if(label==="Bora"){answer("Bora","name");bot("Então vamos! Qual é o seu nome?")}
-  else if(label==="Está certo, gerar meu teste")generate();
+  else if(label==="Sim, está correto!")generate();
   else if(label==="Corrigir"){setStep("name");bot("Sem problema. Vamos corrigir. Qual é o seu nome?")}
   else if(label==="Instalar no celular"||label==="Instalar na TV")install(label);
   else if(label==="Ver planos"){setMsgs(m=>[...m,{from:"user",text:label}]);bot("Perfeito! Vamos te mostrar os planos disponíveis.");setStep("offer");save({stage:"offer"})}
  };
- const quick=useMemo(()=>step==="welcome"?["Quero testar","Como funciona?"]:step==="help"?["Bora"]:step==="confirm"?["Está certo, gerar meu teste","Corrigir"]:step==="install"?["Instalar no celular","Instalar na TV"]:step==="offer"?["Ver planos"]:[],[step]);
+ const quick=useMemo(()=>step==="welcome"?["Quero testar","Como funciona?"]:step==="help"?["Bora"]:step==="confirm"?["Sim, está correto!","Corrigir"]:step==="install"?["Instalar no celular","Instalar na TV"]:step==="offer"?["Ver planos"]:[],[step]);
 
  return <main className="app"><div className="chat">
   <header className="topbar"><div className="brand">Uny<span>Flick</span></div><div className="secure">● acesso seguro</div></header>
