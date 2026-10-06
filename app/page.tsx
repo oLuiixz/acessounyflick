@@ -38,7 +38,7 @@ export default function Home(){
  const bot=(text:string,next?:()=>void)=>{setTyping(true);setTimeout(()=>{setMsgs(m=>[...m,{from:"bot",text}]);setTyping(false);next?.()},900)};
  const answer=(text:string,nextStep:Step,reply=text)=>{setMsgs(m=>[...m,{from:"user",text:reply}]);setInput("");setError("");setStep(nextStep)};
  const start=()=>{answer("Quero testar","name");bot("Perfeito. Qual é o seu nome?")};
- const how=()=>{answer("Como funciona?","help");bot("É simples: você recebe um acesso de teste para assistir ao catálogo no celular ou na TV. Sem compromisso. 😉")};
+ const how=()=>{answer("Como funciona?","help");bot("É simples: você recebe um acesso bônus para assistir a filmes, séries e canais ao vivo no celular ou na TV. Sem compromisso. 😉")};
  const validate=(s:string)=>{if(step==="name"||step==="surname")return s.trim().length>=2;if(step==="email")return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());if(step==="whatsapp")return /^\d{10,11}$/.test(s.replace(/\D/g,""));return true};
 
  const submit=async()=>{
@@ -413,8 +413,8 @@ ${m3u}
  };
  const quick=useMemo(()=>step==="welcome"?["Quero testar","Como funciona?"]:step==="help"?["Bora"]:step==="confirm"?["Sim, está correto!","Corrigir"]:step==="install"?["Smart TV","Celular / Tablet","Computador","Fire Stick / TV Box / Android TV"]:step==="offer"?["Ver planos"]:[],[step]);
 
- return <main className="app"><div className="chat">
-  <header className="topbar"><div className="brand"><img src="/images/logounyflick.webp" alt="UnyFlick" /></div></header>
+ return <main className="app" aria-label="UnyFlick — filmes, séries e canais ao vivo"><div className="chat">
+  <header className="topbar"><div className="brand"><img src="/images/logounyflick.webp" alt="Logo UnyFlick" width="160" height="48" /></div></header>
   <div className="progress"><div className="progressTop"><span>Acesso Bonus</span><span>passo {progress[step]} de 5</span></div><div className="track"><div className="fill" style={{width:`${progress[step]/5*100}%`}}/></div></div>
   <section className="messages">{msgs.map((m,i)=><div className={`row ${m.from}`} key={i}><div className="bubble">{m.text}</div></div>)}{typing&&<div className="row bot"><div className="typing"><i className="dot"/><i className="dot"/><i className="dot"/></div></div>}{test&&step==="install"&&!typing&&<div className="row bot"><div className="bubble">Onde você vai assistir?</div></div>}{quick.length>0&&!typing&&<div className="quick">{quick.map(q=><button key={q} onClick={()=>click(q)}>{q}</button>)}</div>}</section>
   {!["welcome","help","confirm","test","install","offer"].includes(step)&&<div className="composer"><div className="composerInner"><input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submit()}} placeholder={step==="name"?"Seu nome...":step==="surname"?"Seu sobrenome...":step==="email"?"seu@email.com":"(00) 00000-0000"} autoFocus/><button disabled={!input.trim()||typing} onClick={submit}>Enviar</button></div>{error&&<div className="error">{error}</div>}</div>}
