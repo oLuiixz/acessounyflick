@@ -25,14 +25,14 @@ export async function setAdminCookie(){
     httpOnly:true,
     secure:process.env.NODE_ENV==="production",
     sameSite:"lax",
-    path:"/admin",
+    path:"/",
     maxAge:60*60*24*30
   });
 }
 
 export async function clearAdminCookie(){
   const store=await cookies();
-  store.set(COOKIE_NAME,"",{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/admin",maxAge:0});
+  store.set(COOKIE_NAME,"",{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:0});
 }
 
 export async function isAdminAuthenticated(){
