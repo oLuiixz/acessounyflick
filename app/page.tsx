@@ -12,11 +12,11 @@ const initial:LeadData={name:"",surname:"",email:"",whatsapp:"",utm_source:"",ut
 export default function Home(){
  const [step,setStep]=useState<Step>("welcome");
  const [msgs,setMsgs]=useState<Msg[]>([{from:"bot",text:"Oi! 👋 Eu sou o assistente da UnyFlick."},{from:"bot",text:"Quer assistir filmes, séries e canais ao vivo agora, de graça?"}]);
- const [input,setInput]=useState("");const [typing,setTyping]=useState(false);const [data,setData]=useState(initial);const [leadId,setLeadId]=useState("");const [error,setError]=useState("");
+ const [input,setInput]=useState("");const [typing,setTyping]=useState(false);const [data,setData]=useState(initial);const [leadId,setLeadId]=useState("");const [deviceId,setDeviceId]=useState("");const [error,setError]=useState("");
  const [test,setTest]=useState<{username:string;password:string;expiresAt:string;mock:boolean;playlist?:string;hls?:string;message?:string;payUrl?:string;iboCode?:string;xstartProCode?:string}|null>(null);
 
  useEffect(()=>{const p=new URLSearchParams(window.location.search);setData(d=>({...d,utm_source:p.get("utm_source")||"",utm_medium:p.get("utm_medium")||"",utm_content:p.get("utm_content")||""}))},[]);
- useEffect(()=>{const saved=localStorage.getItem("unyflick_lead_id");if(saved)setLeadId(saved)},[]);
+ useEffect(()=>{const saved=localStorage.getItem("unyflick_lead_id");if(saved)setLeadId(saved);let device=localStorage.getItem("unyflick_device_id");if(!device){device=crypto.randomUUID();localStorage.setItem("unyflick_device_id",device)}setDeviceId(device)},[]);
  const save=async(p:Partial<LeadData>&Record<string,unknown>={})=>{const id=leadId||crypto.randomUUID();if(!leadId){setLeadId(id);localStorage.setItem("unyflick_lead_id",id)}const payload={...data,...p,id};await fetch("/api/leads",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)}).catch(()=>{})};
  const bot=(text:string,next?:()=>void)=>{setTyping(true);setTimeout(()=>{setMsgs(m=>[...m,{from:"bot",text}]);setTyping(false);next?.()},900)};
  const answer=(text:string,nextStep:Step,reply=text)=>{setMsgs(m=>[...m,{from:"user",text:reply}]);setInput("");setError("");setStep(nextStep)};
@@ -39,13 +39,13 @@ export default function Home(){
  const generate=async()=>{
   setMsgs(m=>[...m,{from:"user",text:"Sim, está correto!"}]);setStep("test");setTyping(true);
   try{
-   const r=await fetch("/api/test",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(data)});
-   const t=await r.json();if(!r.ok||!t.success)throw new Error();
+   const r=await fetch("/api/test",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...data,leadId,deviceId})});
+   const t=await r.json();if(!r.ok||!t.success)throw new Error(t.error||"Não foi possível gerar o teste.");
    setTest({username:t.username||"",password:t.password||"",expiresAt:t.expiresAt||"",mock:false,playlist:t.playlist||"",hls:t.hls||"",message:t.message||"",payUrl:t.payUrl||"",iboCode:t.iboCode||"",xstartProCode:t.xstartProCode||""});
    await save({stage:"install",testGenerated:true,testUsername:t.username,testPassword:t.password,testPlaylist:t.playlist});
    setTyping(false);
    bot(t.message||("Seu teste está pronto!\n\n👤 Usuário: "+(t.username||"gerado")+"\n🔑 Senha: "+(t.password||"gerada")),()=>setStep("install"))
-  }catch{setTyping(false);setError("Não foi possível gerar agora. Tente novamente.");setStep("confirm")}
+  }catch(e){setTyping(false);setError(e instanceof Error&&e.message?e.message:"Não foi possível gerar agora. Tente novamente.");setStep("confirm")}
  };
 
  const install=(where:InstallChoice)=>{
