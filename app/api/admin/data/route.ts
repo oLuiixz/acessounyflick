@@ -27,7 +27,7 @@ async function ensureChatTable(){
 
 export async function GET(){
   if(!(await isAdminAuthenticated())) return NextResponse.json({error:"Não autorizado."},{status:401});
-  if(!process.env.DATABASE_URL) return NextResponse.json({stats:{chats:0,leads:0,tests:0,chat24h:0,test24h:0,conversion:0},recent:[]});
+  if(!process.env.DATABASE_URL) return NextResponse.json({stats:{chats:0,leads:0,tests:0,chat24h:0,test24h:0,testClicks24h:0,howClicks24h:0,conversion:0},recent:[],events:[]});
 
   await ensureChatTable();
   await query(`create table if not exists funnel_events (id uuid primary key default gen_random_uuid(),event text not null,session_id text,utm_source text not null default '',utm_medium text not null default '',utm_content text not null default '',created_at timestamptz not null default now())`);
