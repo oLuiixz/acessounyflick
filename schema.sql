@@ -18,6 +18,11 @@ create index if not exists chat_sessions_created_idx on chat_sessions(created_at
 create index if not exists chat_sessions_stage_idx on chat_sessions(stage);
 create index if not exists chat_sessions_lead_idx on chat_sessions(lead_id);
 
+create table if not exists funnel_events (id uuid primary key default gen_random_uuid(),event text not null,session_id text,utm_source text not null default '',utm_medium text not null default '',utm_content text not null default '',created_at timestamptz not null default now());
+create index if not exists funnel_events_created_idx on funnel_events(created_at desc);
+create index if not exists funnel_events_event_idx on funnel_events(event);
+create index if not exists funnel_events_session_idx on funnel_events(session_id);
+
 create table if not exists test_attempts (
  id uuid primary key default gen_random_uuid(),
  lead_id text,
