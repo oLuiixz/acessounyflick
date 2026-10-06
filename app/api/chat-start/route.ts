@@ -56,7 +56,12 @@ export async function POST(req:NextRequest){
     let pushcutSent=false;
     if(pushcut){
       try{
-        const response=await fetch(pushcut,{method:"POST",cache:"no-store"});
+        const response=await fetch(pushcut,{
+          method:"POST",
+          headers:{"content-type":"application/json"},
+          cache:"no-store",
+          body:JSON.stringify({title:"Acesso UnyFlick",text:"💬 Um novo chat foi iniciado!"})
+        });
         pushcutSent=response.ok;
       }catch{}
     }
