@@ -67,10 +67,10 @@ export async function reserveTest(params:{leadId?:string;whatsapp:string;deviceI
     const ipStats=await client.query(
       `select
         count(*) filter (where status='generated')::int as generated_24h,
-        count(*)::int as attempts_1h
+        count(*) filter (where created_at >= $2)::int as attempts_1h
        from test_attempts
-       where ip_hash=$1 and ((created_at >= $2) or (created_at >= $3))`,
-      [ipHash,since24h,since1h]
+       where ip_hash=$1 and created_at >= $3`,
+      [ipHash,since1h,since24h]
     );
     const ipGenerated24h=Number(ipStats.rows[0]?.generated_24h||0);
     const ipAttempts1h=Number(ipStats.rows[0]?.attempts_1h||0);
