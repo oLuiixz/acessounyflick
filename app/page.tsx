@@ -43,8 +43,7 @@ export default function Home(){
    setTest({username:t.username||"",password:t.password||"",expiresAt:t.expiresAt||"",mock:false,playlist:t.playlist||"",hls:t.hls||"",message:t.message||""});
    await save({stage:"install",testGenerated:true,testUsername:t.username,testPassword:t.password,testPlaylist:t.playlist});
    setTyping(false);
-   const access=t.playlist?"📺 Playlist M3U:\n"+t.playlist:"👤 Usuário: "+(t.username||"gerado")+"\n🔑 Senha: "+(t.password||"gerada");
-   bot("Seu teste está pronto!\n\n"+access,()=>setStep("install"))
+   bot(t.message||("Seu teste está pronto!\n\n👤 Usuário: "+(t.username||"gerado")+"\n🔑 Senha: "+(t.password||"gerada")),()=>setStep("install"))
   }catch{setTyping(false);setError("Não foi possível gerar agora. Tente novamente.");setStep("confirm")}
  };
 
