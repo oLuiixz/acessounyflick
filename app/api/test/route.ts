@@ -51,7 +51,7 @@ export async function POST(req:NextRequest){
 
       // A resposta já vem com \n e URLs escapadas no JSON.
       // JSON.parse acima normaliza esses escapes para o texto original.
-      message=String(message).replace(/\\\//g,"/");
+      message=String(message).replace(/\\\//g,"/").replace(/TESTE COMPLETO 2HR/gi,"ACESSO BONUS");
     }catch{
       message=raw;
     }
