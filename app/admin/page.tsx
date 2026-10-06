@@ -2,7 +2,7 @@
 
 import {useCallback,useEffect,useState} from "react";
 
-type Stats={chats:number;leads:number;tests:number;chat24h:number;test24h:number;testClicks24h:number;howClicks24h:number;conversion:number};
+type Stats={chats:number;leads:number;tests:number;chat24h:number;test24h:number;testClicks24h:number;howClicks24h:number;active5m:number;conversion:number};
 type Event={event:string;session_id?:string|null;utm_source:string;utm_medium:string;utm_content:string;created_at:string};
 const eventLabel:Record<string,string>={chat:"💬 Chat iniciado",test:"🚀 Quero testar",how:"👀 Como funciona"};
 type Row={session_id:string;stage:string;utm_source:string;utm_medium:string;utm_content:string;created_at:string;updated_at:string;lead_id?:string|null;name?:string|null;surname?:string|null;email?:string|null;whatsapp?:string|null;test_generated?:boolean|null};
@@ -12,7 +12,7 @@ export default function Admin(){
  const [authed,setAuthed]=useState(false);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
- const [stats,setStats]=useState<Stats>({chats:0,leads:0,tests:0,chat24h:0,test24h:0,testClicks24h:0,howClicks24h:0,conversion:0});
+ const [stats,setStats]=useState<Stats>({chats:0,leads:0,tests:0,chat24h:0,test24h:0,testClicks24h:0,howClicks24h:0,active5m:0,conversion:0});
  const [recent,setRecent]=useState<Row[]>([]);
  const [events,setEvents]=useState<Event[]>([]);
 
@@ -46,7 +46,7 @@ export default function Admin(){
 
  return <main className="admin">
   <div className="adminHeader"><div><div className="adminKicker">UNYFLICK • LIVE</div><h1>Painel de conversão</h1><p className="adminSub">Chats, cliques, leads e testes em um só lugar.</p></div><div className="adminActions"><button className="adminButton secondary" onClick={load} disabled={loading}>{loading?"Atualizando...":"Atualizar"}</button><button className="adminButton ghost" onClick={logout}>Sair</button></div></div>
-  <div className="stats">
+  <div className="stats">\n   <div className="stat live"><b>🟢 {stats.active5m}</b><span>Ativos agora</span><small>Heartbeat • últimos 5 min</small></div>
    <div className="stat"><b>{stats.chat24h}</b><span>Chats • 24h</span><small>{stats.chats} no total</small></div>
    <div className="stat accent"><b>{stats.testClicks24h}</b><span>Quero testar • 24h</span><small>Cliques no funil</small></div>
    <div className="stat"><b>{stats.howClicks24h}</b><span>Como funciona • 24h</span><small>Cliques no funil</small></div>
