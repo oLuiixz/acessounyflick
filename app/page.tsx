@@ -54,9 +54,10 @@ export default function Home(){
  };
 
  const generate=async()=>{
+  if(!fingerprint){const fp=await buildFingerprint().catch(()=>"");if(fp)setFingerprint(fp);}
   setMsgs(m=>[...m,{from:"user",text:"Sim, está correto!"}]);setStep("test");setTyping(true);
   try{
-   const r=await fetch("/api/test",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...data,leadId,deviceId,fingerprint})});
+   const r=await fetch("/api/test",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...data,leadId,deviceId,fingerprint:fingerprint||await buildFingerprint().catch(()=>"")})});
    const t=await r.json();if(!r.ok||!t.success)throw new Error(t.error||"Não foi possível gerar o teste.");
    setTest({username:t.username||"",password:t.password||"",expiresAt:t.expiresAt||"",mock:false,playlist:t.playlist||"",hls:t.hls||"",message:t.message||"",payUrl:t.payUrl||"",iboCode:t.iboCode||"",xstartProCode:t.xstartProCode||""});
    await save({stage:"install",testGenerated:true,testUsername:t.username,testPassword:t.password,testPlaylist:t.playlist});
