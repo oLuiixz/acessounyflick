@@ -46,7 +46,8 @@ export default function Admin(){
 
  return <main className="admin">
   <div className="adminHeader"><div><div className="adminKicker">UNYFLICK • LIVE</div><h1>Painel de conversão</h1><p className="adminSub">Chats, cliques, leads e testes em um só lugar.</p></div><div className="adminActions"><button className="adminButton secondary" onClick={load} disabled={loading}>{loading?"Atualizando...":"Atualizar"}</button><button className="adminButton ghost" onClick={logout}>Sair</button></div></div>
-  <div className="stats">\n   <div className="stat live"><b>🟢 {stats.active5m}</b><span>Ativos agora</span><small>Heartbeat • últimos 5 min</small></div>
+  <div className="stats">
+   <div className="stat live"><b>🟢 {stats.active5m}</b><span>Ativos agora</span><small>Heartbeat • últimos 5 min</small></div>
    <div className="stat"><b>{stats.chat24h}</b><span>Chats • 24h</span><small>{stats.chats} no total</small></div>
    <div className="stat accent"><b>{stats.testClicks24h}</b><span>Quero testar • 24h</span><small>Cliques no funil</small></div>
    <div className="stat"><b>{stats.howClicks24h}</b><span>Como funciona • 24h</span><small>Cliques no funil</small></div>
