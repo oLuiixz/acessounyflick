@@ -3,7 +3,7 @@
 import {useEffect,useMemo,useState} from "react";
 
 type Msg={from:"bot"|"user";text:string};
-type Step="welcome"|"help"|"name"|"surname"|"email"|"whatsapp"|"confirm"|"test"|"install"|"offer";
+type Step="welcome"|"help"|"name"|"surname"|"email"|"whatsapp"|"confirm"|"test"|"install"|"feedback"|"offer";
 type InstallChoice="Smart TV"|"Celular / Tablet"|"Computador"|"Fire Stick / TV Box / Android TV";
 type LeadData={name:string;surname:string;email:string;whatsapp:string;utm_source:string;utm_medium:string;utm_content:string};
 async function buildFingerprint(){
@@ -23,7 +23,7 @@ async function buildFingerprint(){
  });
 }
 
-const progress:Record<Step,number>={welcome:1,help:1,name:1,surname:2,email:3,whatsapp:4,confirm:5,test:5,install:5,offer:5};
+const progress:Record<Step,number>={welcome:1,help:1,name:1,surname:2,email:3,whatsapp:4,confirm:5,test:5,install:5,feedback:5,offer:5};
 const initial:LeadData={name:"",surname:"",email:"",whatsapp:"",utm_source:"",utm_medium:"",utm_content:""};
 
 export default function Home(){
@@ -399,8 +399,8 @@ ${m3u}
 🎧 Qualquer dúvida, chame o suporte!`
   };
   const tutorial=tutorials[where];
-  setStep("offer");
-  bot(tutorial,()=>bot("E se quiser continuar depois do acesso bônus, temos planos a partir de R$ 29,90/mês, em até 12x + 50 canais de esporte bônus.",()=>save({stage:"offer"})));
+  setStep("feedback");
+  bot(tutorial,()=>bot("Conseguiu acessar o app e deu tudo certo?"));
  };
  const click=(label:string)=>{
   if(label==="Quero testar")start();
@@ -409,14 +409,15 @@ ${m3u}
   else if(label==="Sim, está correto!")generate();
   else if(label==="Corrigir"){setStep("name");bot("Sem problema. Vamos corrigir. Qual é o seu nome?")}
   else if(["Smart TV","Celular / Tablet","Computador","Fire Stick / TV Box / Android TV"].includes(label))install(label as InstallChoice);
-  else if(label==="Ver planos"){setMsgs(m=>[...m,{from:"user",text:label}]);bot("Perfeito! Vamos te mostrar os planos disponíveis.");setStep("offer");save({stage:"offer"})}
+  else if(label==="Deu sim"){setMsgs(m=>[...m,{from:"user",text:label}]);bot("Perfeito! 😄 Fico feliz que deu certo. Se precisar de algo, é só chamar.");save({stage:"feedback_success"})}
+  else if(label==="Estou com dúvida"){window.location.href="https://wa.me/5519920133193?text="+encodeURIComponent("ola estou com problema para acessar o app.")}
  };
- const quick=useMemo(()=>step==="welcome"?["Quero testar","Como funciona?"]:step==="help"?["Bora"]:step==="confirm"?["Sim, está correto!","Corrigir"]:step==="install"?["Smart TV","Celular / Tablet","Computador","Fire Stick / TV Box / Android TV"]:step==="offer"?["Ver planos"]:[],[step]);
+ const quick=useMemo(()=>step==="welcome"?["Quero testar","Como funciona?"]:step==="help"?["Bora"]:step==="confirm"?["Sim, está correto!","Corrigir"]:step==="install"?["Smart TV","Celular / Tablet","Computador","Fire Stick / TV Box / Android TV"]:step==="feedback"?["Deu sim","Estou com dúvida"]:step==="offer"?[]:[],[step]);
 
  return <main className="app" aria-label="UnyFlick — filmes, séries e canais ao vivo"><div className="chat">
   <header className="topbar"><div className="brand"><img src="/images/logounyflick.webp" alt="Logo UnyFlick" width="160" height="48" /></div></header>
   <div className="progress"><div className="progressTop"><span>Acesso Bonus</span><span>passo {progress[step]} de 5</span></div><div className="track"><div className="fill" style={{width:`${progress[step]/5*100}%`}}/></div></div>
   <section className="messages">{msgs.map((m,i)=><div className={`row ${m.from}`} key={i}><div className="bubble">{m.text}</div></div>)}{typing&&<div className="row bot"><div className="typing"><i className="dot"/><i className="dot"/><i className="dot"/></div></div>}{test&&step==="install"&&!typing&&<div className="row bot"><div className="bubble">Onde você vai assistir?</div></div>}{quick.length>0&&!typing&&<div className="quick">{quick.map(q=><button key={q} onClick={()=>click(q)}>{q}</button>)}</div>}</section>
-  {!["welcome","help","confirm","test","install","offer"].includes(step)&&<div className="composer"><div className="composerInner"><input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submit()}} placeholder={step==="name"?"Seu nome...":step==="surname"?"Seu sobrenome...":step==="email"?"seu@email.com":"(00) 00000-0000"} autoFocus/><button disabled={!input.trim()||typing} onClick={submit}>Enviar</button></div>{error&&<div className="error">{error}</div>}</div>}
+  {!["welcome","help","confirm","test","install","feedback","offer"].includes(step)&&<div className="composer"><div className="composerInner"><input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submit()}} placeholder={step==="name"?"Seu nome...":step==="surname"?"Seu sobrenome...":step==="email"?"seu@email.com":"(00) 00000-0000"} autoFocus/><button disabled={!input.trim()||typing} onClick={submit}>Enviar</button></div>{error&&<div className="error">{error}</div>}</div>}
  </div></main>
 }
