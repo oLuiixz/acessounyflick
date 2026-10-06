@@ -61,8 +61,14 @@ export async function POST(req:NextRequest){
     const playlist=firstMatch(message,[/M3U\s*\(MPEG-TS\):\s*(https?:\/\/\S+)/i,/🔑\s*(https?:\/\/\S*get\.php\?username=\S+)/i]);
     const hls=firstMatch(message,[/HLS\s*PRINCIPAL:\s*(https?:\/\/\S+)/i]);
     const expiresAt=firstMatch(message,[/📅\s*VENCIMENTO:\s*(.+)/i]);
+    let apiJson:any=null;
+    try{apiJson=JSON.parse(raw)}catch{}
+    const payUrl=typeof apiJson?.payUrl==="string"?apiJson.payUrl:"";
+    const iboCode=firstMatch(message,[/\ud83c\udf88\s*C[óo]digo:\s*(\d+)/i]);
+    const xstartProCode=firstMatch(message,[/XSTART PRO[\\s\\S]*?C[óo]digo:\s*(\d+)/i]);
+    const xstartMaxDownloader=firstMatch(message,[/XSTART MAX[\\s\\S]*?C[óo]d downloader:\s*(\d+)/i]);
 
-    return NextResponse.json({success:true,message,username,password,playlist,hls,expiresAt});
+    return NextResponse.json({success:true,message,username,password,playlist,hls,expiresAt,payUrl,iboCode,xstartProCode,xstartMaxDownloader});
   }catch{
     return NextResponse.json({error:"Falha ao conectar ao servidor de testes."},{status:502});
   }
