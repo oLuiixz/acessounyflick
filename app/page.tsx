@@ -12,7 +12,7 @@ export default function Home(){
  const [step,setStep]=useState<Step>("welcome");
  const [msgs,setMsgs]=useState<Msg[]>([{from:"bot",text:"Oi! 👋 Eu sou o assistente da UnyFlick."},{from:"bot",text:"Quer assistir filmes, séries e canais ao vivo agora, de graça?"}]);
  const [input,setInput]=useState("");const [typing,setTyping]=useState(false);const [data,setData]=useState(initial);const [leadId,setLeadId]=useState("");const [error,setError]=useState("");
- const [test,setTest]=useState<{username:string;password:string;expiresAt:string;mock:boolean;playlist?:string}|null>(null);
+ const [test,setTest]=useState<{username:string;password:string;expiresAt:string;mock:boolean;playlist?:string;hls?:string;message?:string}|null>(null);
 
  useEffect(()=>{const p=new URLSearchParams(window.location.search);setData(d=>({...d,utm_source:p.get("utm_source")||"",utm_medium:p.get("utm_medium")||"",utm_content:p.get("utm_content")||""}))},[]);
  useEffect(()=>{const saved=localStorage.getItem("unyflick_lead_id");if(saved)setLeadId(saved)},[]);
@@ -40,10 +40,11 @@ export default function Home(){
   try{
    const r=await fetch("/api/test",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(data)});
    const t=await r.json();if(!r.ok||!t.success)throw new Error();
-   setTest({username:t.username||"",password:t.password||"",expiresAt:t.expiresAt||"",mock:false,playlist:t.playlist||""});
+   setTest({username:t.username||"",password:t.password||"",expiresAt:t.expiresAt||"",mock:false,playlist:t.playlist||"",hls:t.hls||"",message:t.message||""});
    await save({stage:"install",testGenerated:true,testUsername:t.username,testPassword:t.password,testPlaylist:t.playlist});
    setTyping(false);
-   bot(t.playlist?"Seu teste está pronto!\n\n📺 Playlist: "+t.playlist:"Seu teste está pronto!\n\n👤 Usuário: "+(t.username||"gerado")+"\n🔑 Senha: "+(t.password||"gerada"),()=>setStep("install"))
+   const access=t.playlist?"📺 Playlist M3U:\n"+t.playlist:"👤 Usuário: "+(t.username||"gerado")+"\n🔑 Senha: "+(t.password||"gerada");
+   bot("Seu teste está pronto!\n\n"+access,()=>setStep("install"))
   }catch{setTyping(false);setError("Não foi possível gerar agora. Tente novamente.");setStep("confirm")}
  };
 
