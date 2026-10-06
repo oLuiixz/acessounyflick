@@ -17,5 +17,5 @@ create table if not exists test_attempts (
 create index if not exists test_attempts_ip_created_idx on test_attempts(ip_hash,created_at desc);
 create index if not exists test_attempts_device_idx on test_attempts(device_hash);
 create index if not exists test_attempts_whatsapp_idx on test_attempts(whatsapp_hash);
-create unique index if not exists test_attempts_whatsapp_active_uq on test_attempts(whatsapp_hash) where status in ('pending','generated');
-create unique index if not exists test_attempts_device_active_uq on test_attempts(device_hash) where status in ('pending','generated');
+create index if not exists test_attempts_whatsapp_created_idx on test_attempts(whatsapp_hash,created_at desc);
+create index if not exists test_attempts_whatsapp_generated_idx on test_attempts(whatsapp_hash,completed_at desc) where status='generated';
