@@ -64,5 +64,6 @@ export default function Admin(){
     {!recent.length&&<tr><td colSpan={6} className="empty">Nenhum chat registrado ainda.</td></tr>}
    </tbody></table></div>
   </div>
+  </div>
  </main>
 }
