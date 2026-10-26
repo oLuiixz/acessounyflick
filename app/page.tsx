@@ -54,7 +54,7 @@ export default function Home(){
  const save=async(p:Partial<LeadData>&Record<string,unknown>={})=>{const id=leadId||crypto.randomUUID();if(!leadId){setLeadId(id);localStorage.setItem("unyflick_lead_id",id)}const payload={...data,...p,id};await fetch("/api/leads",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)}).catch(()=>{})};
  const bot=(text:string,next?:()=>void)=>{setTyping(true);setTimeout(()=>{setMsgs(m=>[...m,{from:"bot",text}]);setTyping(false);next?.()},900)};
  const answer=(text:string,nextStep:Step,reply=text)=>{setMsgs(m=>[...m,{from:"user",text:reply}]);setInput("");setError("");setStep(nextStep)};
- const start=()=>{answer("Quero testar","name");bot("Perfeito. Qual é o seu nome?")};
+ const start=()=>{answer("Acesso Grátis","name");bot("Perfeito. Qual é o seu nome?")};
  const how=()=>{answer("Como funciona?","help");bot("É simples: você recebe um acesso bônus para assistir a filmes, séries e canais ao vivo no celular ou na TV. Sem compromisso. 😉")};
  const validate=(s:string)=>{if(step==="name"||step==="surname")return s.trim().length>=2;if(step==="email")return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());if(step==="whatsapp")return /^\d{10,11}$/.test(s.replace(/\D/g,""));return true};
 
@@ -420,7 +420,7 @@ ${m3u}
   bot(tutorial,()=>bot("Conseguiu acessar o app e deu tudo certo?"));
  };
  const click=(label:string)=>{
-  if(label==="Quero testar")start();
+  if(label==="Acesso Grátis")start();
   else if(label==="Como funciona?")how();
   else if(label==="Bora"){answer("Bora","name");bot("Então vamos! Qual é o seu nome?")}
   else if(label==="Sim, está correto!")generate();
@@ -429,7 +429,7 @@ ${m3u}
   else if(label==="Deu sim"){setMsgs(m=>[...m,{from:"user",text:label}]);bot("Perfeito! 😄 Fico feliz que deu certo. Se precisar de algo, é só chamar.");save({stage:"feedback_success"})}
   else if(label==="Estou com dúvida"){window.location.href="https://wa.me/5519920133193?text="+encodeURIComponent("ola estou com problema para acessar o app.")}
  };
- const quick=useMemo(()=>step==="welcome"?["Quero testar","Como funciona?"]:step==="help"?["Bora"]:step==="confirm"?["Sim, está correto!","Corrigir"]:step==="install"?["Smart TV","Celular / Tablet","Computador","Fire Stick / TV Box / Android TV"]:step==="feedback"?["Deu sim","Estou com dúvida"]:step==="offer"?[]:[],[step]);
+ const quick=useMemo(()=>step==="welcome"?["Acesso Grátis","Como funciona?"]:step==="help"?["Bora"]:step==="confirm"?["Sim, está correto!","Corrigir"]:step==="install"?["Smart TV","Celular / Tablet","Computador","Fire Stick / TV Box / Android TV"]:step==="feedback"?["Deu sim","Estou com dúvida"]:step==="offer"?[]:[],[step]);
 
  return <main className="app" aria-label="UnyFlick — filmes, séries e canais ao vivo"><div className="chat">
   <header className="topbar"><div className="brand"><img src="/images/logounyflick.webp" alt="Logo UnyFlick" width="160" height="48" /></div></header>
